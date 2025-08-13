@@ -15,6 +15,7 @@ import torch.nn.functional as F
 import torch
 from hydra.core.hydra_config import HydraConfig
 import os
+from dacite import from_dict
 
 @dataclass
 class MVSNetWapperConfig:
@@ -22,6 +23,31 @@ class MVSNetWapperConfig:
     learning_rate: float
 
 
+@dataclass
+class TrainingConfig:
+    batch_size: int
+    learning_rate: float
+    epochs: int
+    device: str
+
+@dataclass
+class ModelConfig:
+    learning_rate: float
+    depth_steps: int
+    depth_interval: int
+    name: str
+    in_channels: int
+
+@dataclass
+class DatasetConfig:
+    training: MVSNetDatasetDTUConfig
+    validation: MVSNetDatasetDTUConfig
+
+@dataclass
+class MainConfig:
+    training: TrainingConfig
+    model: ModelConfig
+    dataset: DatasetConfig
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="main")
@@ -29,6 +55,9 @@ def main(cfg: DictConfig):
     print("=== Hydra Configuration ===")
     print(f"Configuration type: {type(cfg)}")
     print(f"Configuration content:")
+    print(cfg)
+
+    cfg = from_dict(MainConfig,  OmegaConf.to_container(cfg))
     print(cfg)
 
 
