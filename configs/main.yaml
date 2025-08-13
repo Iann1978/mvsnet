@@ -25,8 +25,15 @@ dataset:
     stage: "val"
     root: "./datasets/dtu"
 
-# Logging
-logging:
-  tensorboard: true
-  log_dir: "./logs"
-  save_interval: 10
+
+
+defaults:
+  - _self_
+
+hydra:
+  run:
+    dir: runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  output_subdir: .

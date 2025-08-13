@@ -1,5 +1,5 @@
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from MVSNetDatasetDTU import MVSNetDatasetDTU, MVSNetDatasetDTUConfig
 from MVSNetWapper import MVSNetWapper
 from pytorch_lightning import LightningModule
@@ -13,6 +13,8 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import Trainer
 import torch.nn.functional as F
 import torch
+from hydra.core.hydra_config import HydraConfig
+import os
 
 @dataclass
 class MVSNetWapperConfig:
@@ -40,6 +42,16 @@ def main(cfg: DictConfig):
     print(f"Configuration content:")
     print(cfg)
 
+
+    hydra_cfg = HydraConfig.get()
+    hydra_run_dir = hydra_cfg.run.dir
+    tensorboard_dir = os.path.join(hydra_run_dir, "logs")
+    checkpoint_dir = os.path.join(hydra_run_dir, "checkpoints")
+
+    
+
+
+
     train_dataset = MVSNetDatasetDTU(cfg.dataset.validation)
     val_dataset = MVSNetDatasetDTU(cfg.dataset.validation)
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=4, persistent_workers=True)
@@ -47,7 +59,7 @@ def main(cfg: DictConfig):
 
     model = MVSNetWapper(cfg.model)
     checkpoint_callback = ModelCheckpoint(
-        dirpath='checkpoints',
+        dirpath=checkpoint_dir,
         filename='mvsnet-{epoch:02d}-{val_loss:.4f}',
         monitor='val_loss',
         mode='min',
@@ -56,7 +68,7 @@ def main(cfg: DictConfig):
         every_n_epochs=1  # Save every epoch
     )
 
-    trainer = Trainer(max_epochs=10, logger=TensorBoardLogger('lightning_logs'), callbacks=[checkpoint_callback])
+    trainer = Trainer(max_epochs=10, logger=TensorBoardLogger(tensorboard_dir), callbacks=[checkpoint_callback])
     trainer.fit(model, train_loader, val_loader)
     trainer.test(model, val_loader)
 

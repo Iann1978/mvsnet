@@ -210,3 +210,4 @@ datasets
 lightning_logs
 outputs
 runs
+logs
