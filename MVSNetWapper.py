@@ -82,7 +82,7 @@ class FeatureNet(nn.Module):
         x = x.view(B, V, 32, H//4, W//4) # (B, V, 32, H/4, W/4)
         return x
 
-class CostVolume():
+class HomographyWarping():
     def __init__(self):
         pass
 
@@ -283,7 +283,7 @@ class MVSNetWapper(LightningModule):
         self.cfg = cfg
         self.learning_rate = cfg.learning_rate
         self.feature_net = FeatureNet()
-        self.cost_volume = CostVolume()
+        self.homography_warping = HomographyWarping()
         self.cost_volume_regularization = CostVolumeRegularization()
         self.depth_estimator = DepthEstimator(depth_steps=self.cfg.depth_steps)
         self.conv1 = nn.Conv2d(3, 1, 3, padding=1)
@@ -305,7 +305,7 @@ class MVSNetWapper(LightningModule):
         deps = [500+i*self.cfg.depth_interval for i in range(self.cfg.depth_steps)]
         deps = torch.tensor(deps, device=images.device, dtype=images.dtype).float()
         feats = self.feature_net(images) # (B, V, 32, H/4, W/4)
-        cost_volumes = self.cost_volume(intrinsics, extrinsics, feats, deps) # (B, D, 32, H/4, W/4)
+        cost_volumes = self.homography_warping(intrinsics, extrinsics, feats, deps) # (B, D, 32, H/4, W/4)
         cost_volumes = self.cost_volume_regularization(cost_volumes)
         depth = self.depth_estimator(cost_volumes,deps)
 
