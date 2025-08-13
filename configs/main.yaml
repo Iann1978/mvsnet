@@ -1,0 +1,32 @@
+
+
+# Training settings
+training:
+  batch_size: 4
+  learning_rate: 0.001
+  epochs: 100
+  device: "cuda"
+
+# Model settings
+model:
+  learning_rate: 0.001
+  depth_steps: 100
+  depth_interval: 5
+  name: "mvsnet"
+  in_channels: 3
+  out_channels: 1
+
+# Data settings
+dataset:
+  training:
+    stage: "train"
+    root: "./datasets/dtu"
+  validation:
+    stage: "val"
+    root: "./datasets/dtu"
+
+# Logging
+logging:
+  tensorboard: true
+  log_dir: "./logs"
+  save_interval: 10
