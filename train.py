@@ -22,18 +22,7 @@ class MVSNetWapperConfig:
     learning_rate: float
 
 
-def get_data_loaders():
-    transform = T.Compose([
-        T.ToTensor(),
-        T.Normalize((0.1307,), (0.3081,))
-    ])
 
-    train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-    val_dataset = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
-
-    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=4, persistent_workers=True)
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=True)
-    return train_loader, val_loader
 
 @hydra.main(version_base=None, config_path="configs", config_name="main")
 def main(cfg: DictConfig):

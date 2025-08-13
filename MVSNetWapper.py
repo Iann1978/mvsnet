@@ -44,9 +44,9 @@ class ConvBn(nn.Module):
     def forward(self, x):
         return self.bn(self.conv(x))
 
-class ConvBnReLU3d(nn.Module):
+class ConvBnReLU3D(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, pad=1):
-        super(ConvBnReLU3d, self).__init__()
+        super(ConvBnReLU3D, self).__init__()
         self.conv = nn.Conv3d(in_channels, out_channels, kernel_size, stride=stride, padding=pad, bias=False)
         self.bn = nn.BatchNorm3d(out_channels)
 
@@ -213,34 +213,65 @@ class CostVolume():
 class CostVolumeRegularization(nn.Module):
     def __init__(self):
         super(CostVolumeRegularization, self).__init__()
-        self.conv1 = ConvBnReLU(32, 32, 3, 1, 1)
-        self.conv2 = ConvBnReLU(32, 32, 3, 1, 1)
-        self.conv3 = ConvBnReLU(32, 32, 3, 1, 1)
-        self.conv4 = ConvBnReLU(32, 32, 1, 1, 0)
+        self.conv0 = ConvBnReLU3D(32, 8)
+
+        self.conv1 = ConvBnReLU3D(8, 16, stride=2)
+        self.conv2 = ConvBnReLU3D(16, 16)
+
+        self.conv3 = ConvBnReLU3D(16, 32, stride=2)
+        self.conv4 = ConvBnReLU3D(32, 32)
+
+        self.conv5 = ConvBnReLU3D(32, 64, stride=2)
+        self.conv6 = ConvBnReLU3D(64, 64)
+
+        self.conv7 = nn.Sequential(
+            nn.ConvTranspose3d(64, 32, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False),
+            nn.BatchNorm3d(32),
+            nn.ReLU(inplace=True))
+
+        self.conv9 = nn.Sequential(
+            nn.ConvTranspose3d(32, 16, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False),
+            nn.BatchNorm3d(16),
+            nn.ReLU(inplace=True))
+
+        self.conv11 = nn.Sequential(
+            nn.ConvTranspose3d(16, 8, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False),
+            nn.BatchNorm3d(8),
+            nn.ReLU(inplace=True))
+
+        self.prob = nn.Conv3d(8, 1, 3, stride=1, padding=1)
     
     def forward(self, x):
         # x (B, D, C, H, W)
         B, D, C, H, W = x.shape
-        x = x.view(B*D, C, H, W)
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = x.view(B, D, C, H, W)
+        x = rearrange(x, 'b d c h w -> b c d h w')
+        conv0 = self.conv0(x)
+        conv2 = self.conv2(self.conv1(conv0))
+        x = self.conv4(self.conv3(conv2))
+        # x = self.conv6(self.conv5(conv4))
+        # x = conv4 + self.conv7(x)
+        x = conv2 + self.conv9(x)
+        x = conv0 + self.conv11(x)
+        x = self.prob(x) # (B, 1, D, H, W)
         return x
 
 class DepthEstimator(nn.Module):
     def __init__(self, depth_steps=5):
         super(DepthEstimator, self).__init__()
-        self.conv1 = nn.Conv2d(depth_steps*32, 1, 1)
+        self.conv = nn.Conv2d(100, 100, 1)
+        # self.conv1 = nn.Conv2d(depth_steps*32, 1, 1)
 
     def forward(self, x, deps):
-        B, D, C, H, W = x.shape
+        # input (B, C, D, H, W) 
+        # output (B, H, W)
+        
+        B, C, D, H, W = x.shape
+        assert B == 1, 'B must be 1 in depth estimator'
         # x = x.view(B,D*C, H, W) # (B, V*32, H, W)
-        x = rearrange(x, 'b d c h w -> b (d c) h w')
-        x = self.conv1(x)
-        x = x.view(B, H, W) # (B, H, W)
-        x = torch.softmax(x, dim=0)
+        x = rearrange(x, 'b c d h w -> (b c) d h w')
+        x = self.conv(x)
+        x = F.softmax(x, dim=1)
+        x = x.squeeze(0)
         deps = deps[:,None,None]
         x = torch.sum(x * deps, dim=0, keepdim=True)
         return x
