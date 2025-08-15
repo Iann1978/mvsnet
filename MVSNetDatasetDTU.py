@@ -16,6 +16,7 @@ Stage = Literal["train", "val", "test"]
 class MVSNetDatasetDTUConfig:
     stage: Stage
     root: str
+    src_view_number: int
    
 
 
@@ -43,6 +44,7 @@ class MVSNetDatasetDTU(Dataset):
         for scan in scans:
             for light in range(7):
                 for view_pair in self.view_pairs:
+                    view_pair = view_pair[:self.cfg.src_view_number+1]
                     metas.append({"scan": scan, "light": light, "views": view_pair})
         return metas
 

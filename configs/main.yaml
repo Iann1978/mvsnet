@@ -21,9 +21,11 @@ dataset:
   training:
     stage: "train"
     root: "./datasets/dtu"
+    src_view_number: 4
   validation:
     stage: "val"
     root: "./datasets/dtu"
+    src_view_number: 4
 
 
 
