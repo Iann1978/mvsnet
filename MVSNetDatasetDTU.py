@@ -135,7 +135,7 @@ def basic_test():
     print('test MVSNetDatasetDTU')
 
     root = './datasets/dtu'
-    cfg = MVSNetDatasetDTUConfig(stage='val', root=root)
+    cfg = MVSNetDatasetDTUConfig(stage='val', root=root, src_view_number=4)
     dataset = MVSNetDatasetDTU(cfg)
     print(len(dataset))
     intrinsics, extrinsics, imgs, depth = dataset[0]
@@ -147,7 +147,7 @@ def basic_test():
 def show_basic_test():
     print('show basic test')
     root = './datasets/dtu'
-    cfg = MVSNetDatasetDTUConfig(stage='val', root=root)
+    cfg = MVSNetDatasetDTUConfig(stage='val', root=root, src_view_number=4)
     dataset = MVSNetDatasetDTU(cfg)
     print(len(dataset))
     intrinsics, extrinsics, imgs, depth = dataset[0]
@@ -155,7 +155,8 @@ def show_basic_test():
 
     fig, axs = plt.subplots(3, 3, figsize=(12, 12))
     axs = axs.flatten()
-    for i in range(8):
+    view_number = cfg.src_view_number + 1 if cfg.src_view_number < 7 else 8
+    for i in range(view_number):
         axs[i].imshow(imgs[i].cpu().permute(1, 2, 0))
         axs[i].set_title(f"Img {i+1}")
         axs[i].axis('off')
