@@ -3,15 +3,15 @@
 # Training settings
 training:
   batch_size: 4
-  learning_rate: 0.001
+  learning_rate: 1e-6
   epochs: 100
   device: "cuda"
 
 # Model settings
 model:
-  learning_rate: 0.001
+  learning_rate: 1e-6
   depth_steps: 100
-  depth_interval: 5
+  depth_interval: 5.0
   name: "mvsnet"
   in_channels: 3
   out_channels: 1

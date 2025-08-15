@@ -323,7 +323,7 @@ class MVSNetWapper(LightningModule):
         preds = self(batched_views)
         masked_preds = preds * mask
         masked_depths = depths * mask
-        loss = F.mse_loss(masked_preds, masked_depths)
+        loss = F.l1_loss(masked_preds, masked_depths)
         self.log('train_loss', loss)
         return loss
 
@@ -337,7 +337,7 @@ class MVSNetWapper(LightningModule):
         preds = self(batched_views)
         masked_preds = preds * mask
         masked_depths = depths * mask
-        loss = F.mse_loss(masked_preds, masked_depths)
+        loss = F.l1_loss(masked_preds, masked_depths)
         self.log('val_loss', loss)
         if batch_idx == 0:
              # Normalize to fixed range [500, 1000] -> [0, 1]

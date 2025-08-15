@@ -34,7 +34,7 @@ class TrainingConfig:
 class ModelConfig:
     learning_rate: float
     depth_steps: int
-    depth_interval: int
+    depth_interval: float
     name: str
     in_channels: int
 
@@ -85,10 +85,14 @@ def main(cfg: DictConfig):
         mode='min',
         save_top_k=3,  # Save top 3 best models
         save_last=True,  # Always save the last model
-        every_n_epochs=1  # Save every epoch
+        every_n_epochs=1,  # Save every epoch
     )
 
-    trainer = Trainer(max_epochs=10, logger=TensorBoardLogger(tensorboard_dir), callbacks=[checkpoint_callback])
+    trainer = Trainer(max_epochs=100,
+                      logger=TensorBoardLogger(tensorboard_dir),
+                      callbacks=[checkpoint_callback],
+                      val_check_interval=1000,
+                      )
     trainer.fit(model, train_loader, val_loader)
     trainer.test(model, val_loader)
 
