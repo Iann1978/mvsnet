@@ -10,6 +10,7 @@ from typing_extensions import TypedDict
 from jaxtyping import Float, Int64
 from torch import Tensor
 from einops import rearrange
+import matplotlib.pyplot as plt
 
 
 class BatchedViews(TypedDict, total=False):
@@ -335,13 +336,36 @@ class MVSNetWapper(LightningModule):
         loss = F.mse_loss(preds, depths)
         self.log('val_loss', loss)
         if batch_idx == 0:
-            self.logger.experiment.add_image('val_preds', preds.cpu(), self.global_step)
-            self.logger.experiment.add_image('val_depth', depths.cpu(), self.global_step)
+             # Normalize to fixed range [500, 1000] -> [0, 1]
+            depths_normalized = (depths - 500) / (1000 - 500)
+            preds_normalized = (preds - 500) / (1000 - 500)
+            
+            # Clamp to [0, 1] range
+            depths_normalized = torch.clamp(depths_normalized, 0, 1).cpu()
+            preds_normalized = torch.clamp(preds_normalized, 0, 1).cpu()
+            
+            self.logger.experiment.add_image('depth/preds', preds_normalized, self.global_step)
+            self.logger.experiment.add_image('depth/groundtruth', depths_normalized, self.global_step)
+            self.logger.experiment.add_image('depth/preds_colored', self.apply_colormap(preds_normalized), self.global_step)
+            self.logger.experiment.add_image('depth/groundtruth_colored', self.apply_colormap(depths_normalized), self.global_step)
         return loss
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
+
+    def apply_colormap(self, depth_tensor):
+        """Apply colormap to depth tensor for better visualization"""
+        # Convert to numpy and normalize
+        depth_np = depth_tensor.squeeze().numpy()
+        depth_normalized = (depth_np - depth_np.min()) / (depth_np.max() - depth_np.min() + 1e-8)
+        
+        # Apply colormap (e.g., 'viridis', 'plasma', 'inferno', 'magma')
+        colored = plt.cm.viridis(depth_normalized)
+        
+        # Convert back to tensor (remove alpha channel)
+        colored_tensor = torch.from_numpy(colored[:, :, :3]).permute(2, 0, 1)
+        return colored_tensor
 
 @hydra.main(version_base=None, config_path="configs", config_name="main")
 def main(cfg: DictConfig):

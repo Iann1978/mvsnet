@@ -58,7 +58,9 @@ def main(cfg: DictConfig):
     print(cfg)
 
     cfg = from_dict(MainConfig,  OmegaConf.to_container(cfg))
+    print('\n')
     print(cfg)
+
 
 
     hydra_cfg = HydraConfig.get()
