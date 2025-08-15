@@ -85,6 +85,7 @@ class MVSNetDatasetDTU(Dataset):
 
     def read_depth(self, filename):
         depth = imageio.imread(filename)
+        depth = np.flipud(depth).copy()
         depth = torch.from_numpy(depth).float()
         return depth
 
@@ -182,4 +183,4 @@ def show_basic_test():
 
 
 if __name__ == "__main__":
-    basic_test()
+    show_basic_test()

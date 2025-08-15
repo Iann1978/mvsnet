@@ -348,8 +348,10 @@ class MVSNetWapper(LightningModule):
             depths_normalized = torch.clamp(depths_normalized, 0, 1).cpu()
             preds_normalized = torch.clamp(preds_normalized, 0, 1).cpu()
             
+            self.logger.experiment.add_image('depth/ref_img', imgs[0][0].cpu(), self.global_step, dataformats='CHW')
             self.logger.experiment.add_image('depth/preds', preds_normalized, self.global_step)
             self.logger.experiment.add_image('depth/groundtruth', depths_normalized, self.global_step)
+            self.logger.experiment.add_image('depth/mask', mask, self.global_step)
             self.logger.experiment.add_image('depth/preds_colored', self.apply_colormap(preds_normalized), self.global_step)
             self.logger.experiment.add_image('depth/groundtruth_colored', self.apply_colormap(depths_normalized), self.global_step)
         return loss

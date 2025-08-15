@@ -72,10 +72,10 @@ def main(cfg: DictConfig):
 
 
 
-    train_dataset = MVSNetDatasetDTU(cfg.dataset.validation)
+    train_dataset = MVSNetDatasetDTU(cfg.dataset.training)
     val_dataset = MVSNetDatasetDTU(cfg.dataset.validation)
-    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=4, persistent_workers=True)
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=True)
+    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=8, persistent_workers=True)
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=False)
 
     model = MVSNetWapper(cfg.model)
     checkpoint_callback = ModelCheckpoint(
