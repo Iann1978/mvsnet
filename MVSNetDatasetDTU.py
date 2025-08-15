@@ -18,11 +18,6 @@ class MVSNetDatasetDTUConfig:
     root: str
    
 
-class BatchedViews(TypedDict, total=False):
-    extrinsics: Float[Tensor, "batch _ 4 4"]  # batch view 4 4
-    intrinsics: Float[Tensor, "batch _ 3 3"]  # batch view 3 3
-    images: Float[Tensor, "batch _ _ _ _"]  # batch view channel height width
-
 
 class Meta(TypedDict, total=True):
     scan: str
