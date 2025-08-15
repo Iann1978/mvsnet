@@ -314,26 +314,30 @@ class MVSNetWapper(LightningModule):
         return depth
 
     def training_step(self, batch, batch_idx):
-        intrinsics, extrinsics, imgs, depths = batch
+        intrinsics, extrinsics, imgs, depths, mask = batch
         batched_views = BatchedViews(
             intrinsics=intrinsics,
             extrinsics=extrinsics,
             images=imgs
         )
         preds = self(batched_views)
-        loss = F.mse_loss(preds, depths)
+        masked_preds = preds * mask
+        masked_depths = depths * mask
+        loss = F.mse_loss(masked_preds, masked_depths)
         self.log('train_loss', loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        intrinsics, extrinsics, imgs, depths = batch
+        intrinsics, extrinsics, imgs, depths, mask = batch
         batched_views = BatchedViews(
             intrinsics=intrinsics,
             extrinsics=extrinsics,
             images=imgs
         )
         preds = self(batched_views)
-        loss = F.mse_loss(preds, depths)
+        masked_preds = preds * mask
+        masked_depths = depths * mask
+        loss = F.mse_loss(masked_preds, masked_depths)
         self.log('val_loss', loss)
         if batch_idx == 0:
              # Normalize to fixed range [500, 1000] -> [0, 1]

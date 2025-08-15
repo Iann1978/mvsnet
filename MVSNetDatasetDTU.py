@@ -85,7 +85,14 @@ class MVSNetDatasetDTU(Dataset):
 
     def read_depth(self, filename):
         depth = imageio.imread(filename)
+        depth = torch.from_numpy(depth).float()
         return depth
+
+    def read_mask(self, filename):
+        mask = imageio.imread(filename)
+        mask = torch.from_numpy(mask).float()
+        mask = mask / 255.0
+        return mask
 
     def __len__(self):
         return len(self.metas)
@@ -125,10 +132,12 @@ class MVSNetDatasetDTU(Dataset):
 
         refview = views[0]
         depth_pathfile = os.path.join(self.cfg.root, 'Depths', f'{scan}_train', f'depth_map_{refview:04d}.pfm')
+        mask_pathfile = os.path.join(self.cfg.root, 'Depths', f'{scan}_train', f'depth_visual_{refview:04d}.png')
         depth = self.read_depth(depth_pathfile)
-        depth = torch.from_numpy(depth).float()
+        mask = self.read_mask(mask_pathfile)
 
-        return intrinsics, extrinsics, imgs, depth 
+
+        return intrinsics, extrinsics, imgs, depth, mask
 
 
 def basic_test():
@@ -138,11 +147,12 @@ def basic_test():
     cfg = MVSNetDatasetDTUConfig(stage='val', root=root, src_view_number=4)
     dataset = MVSNetDatasetDTU(cfg)
     print(len(dataset))
-    intrinsics, extrinsics, imgs, depth = dataset[0]
-    print(intrinsics.shape)
-    print(extrinsics.shape)
-    print(imgs.shape, imgs.min(), imgs.max())
-    print(depth.shape, depth.min(), depth.max())
+    intrinsics, extrinsics, imgs, depth, mask = dataset[0]
+    print('intrinsics:', intrinsics.shape)
+    print('extrinsics:', extrinsics.shape)
+    print('imgs:', imgs.shape, imgs.min(), imgs.max())
+    print('depth:', depth.shape, depth.min(), depth.max())
+    print('mask:', mask.shape, mask.min(), mask.max())
 
 def show_basic_test():
     print('show basic test')
@@ -150,23 +160,26 @@ def show_basic_test():
     cfg = MVSNetDatasetDTUConfig(stage='val', root=root, src_view_number=4)
     dataset = MVSNetDatasetDTU(cfg)
     print(len(dataset))
-    intrinsics, extrinsics, imgs, depth = dataset[0]
+    intrinsics, extrinsics, imgs, depth, mask = dataset[0]
     import matplotlib.pyplot as plt
 
     fig, axs = plt.subplots(3, 3, figsize=(12, 12))
     axs = axs.flatten()
-    view_number = cfg.src_view_number + 1 if cfg.src_view_number < 7 else 8
+    view_number = cfg.src_view_number + 1 if cfg.src_view_number < 6 else 7
     for i in range(view_number):
         axs[i].imshow(imgs[i].cpu().permute(1, 2, 0))
         axs[i].set_title(f"Img {i+1}")
         axs[i].axis('off')
-    axs[8].imshow(depth.cpu())
-    axs[8].set_title(f"Depth")
-    axs[8].axis('off')
+    axs[view_number].imshow(depth.cpu())
+    axs[view_number].set_title(f"Depth")
+    axs[view_number].axis('off')
+    axs[view_number+1].imshow(mask.cpu())
+    axs[view_number+1].set_title(f"Mask")
+    axs[view_number+1].axis('off')
     plt.tight_layout()
     plt.show()
 
 
 
 if __name__ == "__main__":
-    show_basic_test()
+    basic_test()
