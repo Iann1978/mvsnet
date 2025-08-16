@@ -10,8 +10,8 @@ training:
 # Model settings
 model:
   learning_rate: 1e-6
-  depth_steps: 100
-  depth_interval: 5.0
+  depth_steps: 64
+  depth_interval: 8.0
   name: "mvsnet"
   in_channels: 3
   out_channels: 1

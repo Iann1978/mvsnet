@@ -259,7 +259,8 @@ class CostVolumeRegularization(nn.Module):
 class DepthEstimator(nn.Module):
     def __init__(self, depth_steps=5):
         super(DepthEstimator, self).__init__()
-        self.conv = nn.Conv2d(100, 100, 1)
+        self.depth_steps = depth_steps
+        self.conv = nn.Conv2d(depth_steps, depth_steps, 1)
         # self.conv1 = nn.Conv2d(depth_steps*32, 1, 1)
 
     def forward(self, x, deps):
@@ -268,6 +269,7 @@ class DepthEstimator(nn.Module):
         
         B, C, D, H, W = x.shape
         assert B == 1, 'B must be 1 in depth estimator'
+        assert D == self.depth_steps, 'D must be depth_steps in depth estimator'
         # x = x.view(B,D*C, H, W) # (B, V*32, H, W)
         x = rearrange(x, 'b c d h w -> (b c) d h w')
         x = self.conv(x)
