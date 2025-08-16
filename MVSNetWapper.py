@@ -279,6 +279,19 @@ class DepthEstimator(nn.Module):
         x = torch.sum(x * deps, dim=0, keepdim=True)
         return x
 
+class RefineNet(nn.Module):
+    def __init__(self):
+        super(RefineNet, self).__init__()
+        self.conv1 = ConvBnReLU(4, 32)
+        self.conv2 = ConvBnReLU(32, 32)
+        self.conv3 = ConvBnReLU(32, 32)
+        self.res = ConvBnReLU(32, 1)
+
+    def forward(self, img, depth_init):
+        concat = torch.cat((img, depth_init), dim=1)
+        depth_residual = self.res(self.conv3(self.conv2(self.conv1(concat))))
+        depth_refined = depth_init + depth_residual
+        return depth_refined
 
 class MVSNetWapper(LightningModule):
     def __init__(self, cfg: DictConfig):
@@ -289,8 +302,7 @@ class MVSNetWapper(LightningModule):
         self.homography_warping = HomographyWarping()
         self.cost_volume_regularization = CostVolumeRegularization()
         self.depth_estimator = DepthEstimator(depth_steps=self.cfg.depth_steps)
-        self.conv1 = nn.Conv2d(3, 1, 3, padding=1)
-        self.pool = nn.MaxPool2d(2,2)
+        self.refine_net = RefineNet()
 
     def forward(self, x: BatchedViews):
         # return (B, H, W)
@@ -303,6 +315,7 @@ class MVSNetWapper(LightningModule):
         intrinsics = x['intrinsics'] # (B, V, 3, 3)
         extrinsics = x['extrinsics'] # (B, V, 4, 4)
         images = x['images'] # (B, V, 3, H, W)
+        B, V, C, H, W = images.shape
 
         # deps = torch.arange(0, self.cfg.depth_steps, self.cfg.depth_interval, device=images.device, dtype=images.dtype)
         deps = [500+i*self.cfg.depth_interval for i in range(self.cfg.depth_steps)]
@@ -310,10 +323,13 @@ class MVSNetWapper(LightningModule):
         feats = self.feature_net(images) # (B, V, 32, H/4, W/4)
         cost_volumes = self.homography_warping(intrinsics, extrinsics, feats, deps) # (B, D, 32, H/4, W/4)
         cost_volumes = self.cost_volume_regularization(cost_volumes)
-        depth = self.depth_estimator(cost_volumes,deps)
+        depth_init = self.depth_estimator(cost_volumes,deps) # (B, H/4, W/4)
+        imgs = images[:,0] # (B, 3, H, W)
+        imgs = F.interpolate(imgs, size=(H//4, W//4), mode='bilinear', align_corners=True) # (B, 3, H/4, W/4)
+        depth_refined = self.refine_net(imgs, depth_init.unsqueeze(1)) # (B, 1, H, W)
+        depth_refined = depth_refined.squeeze(1) # (B, H, W)
 
-
-        return depth
+        return depth_refined
 
     def training_step(self, batch, batch_idx):
         intrinsics, extrinsics, imgs, depths, mask = batch
