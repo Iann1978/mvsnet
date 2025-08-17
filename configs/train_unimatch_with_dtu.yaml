@@ -2,5 +2,9 @@ name: "train_unimatch_with_dtu"
 
 defaults:
   - _self_
+  - hydra: hydra
   - model: unimatch
   - dataset: dtu
+
+epochs: 10
+float32_matmul_precision: "medium"

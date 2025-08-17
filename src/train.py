@@ -11,6 +11,9 @@ import torch
 from dacite import from_dict
 from dataclasses import dataclass
 from typing import Any
+from hydra.core.hydra_config import HydraConfig
+from pytorch_lightning.loggers import TensorBoardLogger
+import os
 
 
 
@@ -62,8 +65,10 @@ class ModelWapper(LightningModule):
         return optimizer
 
 @dataclass
-class MainConfig:
+class TrainConfig:
     name: str
+    epochs: int
+    float32_matmul_precision: str
     dataset: Any
     model: Any
 
@@ -71,27 +76,41 @@ class MainConfig:
 @hydra.main(config_path="../configs",
             config_name="train_unimatch_with_dtu",
             version_base=None)
-def main(cfg: DictConfig):
+def train(cfg: DictConfig):
+    print('--------------------------------train--------------------------------')
     print(OmegaConf.to_yaml(cfg))
 
-    cfg = from_dict(MainConfig, OmegaConf.to_container(cfg))
+    cfg = from_dict(TrainConfig, OmegaConf.to_container(cfg))
+    hydra_cfg = HydraConfig.get()
+    hydra_run_dir = hydra_cfg.run.dir
+    print('run_dir: ', hydra_run_dir)
+    tensorboard_dir = os.path.join(hydra_run_dir, "logs")
+    checkpoint_dir = os.path.join(hydra_run_dir, "checkpoints")
+    os.makedirs(tensorboard_dir, exist_ok=True)
+    os.makedirs(checkpoint_dir, exist_ok=True)
 
 
-
+    print('get loader')
     dataset = get_dataset(cfg.dataset)
-    # print(dataset)
-
     train_loader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=8, persistent_workers=True)
     val_loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=False)
 
-    model = get_model(cfg.model)
-    # print(model)
 
+    
+    print('get model')
+    model = get_model(cfg.model)
     model_wapper = ModelWapper(model)
 
-    trainer = Trainer(max_epochs=10)
+    print('get trainer')
+    trainer = Trainer(max_epochs=cfg.epochs,
+                      logger=TensorBoardLogger(tensorboard_dir),
+                      )
+
+    print('start training')
+    torch.set_float32_matmul_precision(cfg.float32_matmul_precision)  # or use 'high'
     trainer.fit(model_wapper, train_loader, val_loader)
+    print('training done')
 
 
 if __name__ == "__main__":
-    main()
+    train()
