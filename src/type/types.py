@@ -11,4 +11,4 @@ class UnBatchedViews(TypedDict, total=False):
     intrinsics: Float[Tensor, "V 3 3"]
     extrinsics: Float[Tensor, "V 4 4"]
     imgs: Float[Tensor, "V 3 H W"]
-    targets: Float[Tensor, "1 H W"]
+    targets: Float[Tensor, "V 1 H W"]

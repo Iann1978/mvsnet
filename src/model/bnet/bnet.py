@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from model.base_model import BaseModelConfig, BaseModel
+from ..base_model import BaseModelConfig, BaseModel
 
 @dataclass
 class BNetConfig(BaseModelConfig):

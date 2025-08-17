@@ -1,11 +1,11 @@
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from model import get_model
-from dataset import get_dataset
+from .model import get_model
+from .dataset import get_dataset
 from pytorch_lightning import LightningModule, Trainer
 from torch.utils.data import DataLoader
-from type.types import BatchedViews
-from model.base_model import BaseModel
+from .type.types import BatchedViews
+from .model.base_model import BaseModel
 import torch.nn.functional as F
 import torch
 from dacite import from_dict

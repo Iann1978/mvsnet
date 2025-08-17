@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from model.base_model import BaseModelConfig, BaseModel, BatchedViews
+from ..base_model import BaseModelConfig, BaseModel, BatchedViews
 import torch.nn as nn
 
 
@@ -14,5 +14,5 @@ class UniMatch(BaseModel):
         print(self.cfg.configu) 
 
     def forward(self, x: BatchedViews):
-        return self.conv1(x['images'][:,0])
+        return self.conv1(x['images'][:,0]).unsqueeze(1)
 

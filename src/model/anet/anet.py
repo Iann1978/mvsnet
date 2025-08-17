@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from model.base_model import BaseModelConfig, BaseModel
-from model.anet.a1net import A1NetConfig, A1Net
+from ..base_model import BaseModelConfig, BaseModel
+from .a1net import A1NetConfig, A1Net
 from typing import Any
 from omegaconf import DictConfig
 from dacite import from_dict

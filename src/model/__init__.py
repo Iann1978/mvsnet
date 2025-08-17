@@ -1,8 +1,8 @@
 from omegaconf import DictConfig
 from dacite import from_dict
-from model.anet.anet import ANetConfig, ANet
-from model.bnet.bnet import BNetConfig, BNet
-from model.unimatch.unimatch import UniMatchConfig, UniMatch
+from .anet.anet import ANetConfig, ANet
+from .bnet.bnet import BNetConfig, BNet
+from .unimatch.unimatch import UniMatchConfig, UniMatch
 
 config_factory = {'ANet': ANetConfig, 'BNet': BNetConfig, 'UniMatch': UniMatchConfig}
 model_factory = {'ANet': ANet, 'BNet': BNet, 'UniMatch': UniMatch}

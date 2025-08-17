@@ -4,7 +4,7 @@ import torch.nn as nn
 from typing_extensions import TypedDict
 from jaxtyping import Float, Int64
 from torch import Tensor
-from type.types import BatchedViews
+from ..type.types import BatchedViews
 from pytorch_lightning import LightningModule
 
 @dataclass

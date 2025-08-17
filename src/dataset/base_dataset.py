@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Dict, Any, abstractmethod
 from torch.utils.data import Dataset
-from type.types import UnBatchedViews
+from ..type.types import UnBatchedViews
 from abc import ABC
 
 @dataclass
