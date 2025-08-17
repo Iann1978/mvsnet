@@ -91,9 +91,12 @@ def train(cfg: DictConfig):
 
 
     print('get loader')
-    dataset = get_dataset(cfg.dataset)
-    train_loader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=8, persistent_workers=True)
-    val_loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=False)
+    train_dataset = get_dataset(cfg.dataset, 'train')
+    val_dataset = get_dataset(cfg.dataset, 'val')
+    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=8, persistent_workers=True)
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=False)
+    print('train_loader: ', len(train_loader))
+    print('val_loader: ', len(val_loader))
 
 
     

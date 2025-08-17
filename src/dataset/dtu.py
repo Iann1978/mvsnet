@@ -12,7 +12,6 @@ import numpy as np
 
 @dataclass
 class DTUDatasetConfig(BaseDatasetConfig):
-    stage: str
     root: str
 
 class Meta(TypedDict, total=True):
@@ -24,12 +23,13 @@ class DTUDataset(BaseDataset):
     metas: List[Meta]
     viewpairs: List[List[int]]
 
-    def __init__(self, cfg: DTUDatasetConfig):
+    def __init__(self, cfg: DTUDatasetConfig, stage: str):
         super().__init__()
         self.cfg = cfg
+        self.stage = stage
         self.view_pairs_filepath = os.path.join('configs', 'dtu_meta', 'view_pairs.txt')
         self.view_pairs = self.read_view_pairs(self.view_pairs_filepath)
-        self.scan_filepath = os.path.join('configs', 'dtu_meta', f'{cfg.stage}_all.txt')
+        self.scan_filepath = os.path.join('configs', 'dtu_meta', f'{self.stage}_all.txt')
         self.scans = self.read_scans(self.scan_filepath)
         self.metas = self.build_metas(self.scans)
 
