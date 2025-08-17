@@ -7,4 +7,5 @@ defaults:
   - dataset: dtu
 
 epochs: 10
+batch_size: 4
 float32_matmul_precision: "medium"

@@ -68,6 +68,7 @@ class ModelWapper(LightningModule):
 class TrainConfig:
     name: str
     epochs: int
+    batch_size: int
     float32_matmul_precision: str
     dataset: Any
     model: Any
@@ -91,10 +92,10 @@ def train(cfg: DictConfig):
 
 
     print('get loader')
-    train_dataset = get_dataset(cfg.dataset, 'train')
+    train_dataset = get_dataset(cfg.dataset, 'val')
     val_dataset = get_dataset(cfg.dataset, 'val')
-    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=8, persistent_workers=True)
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=False)
+    train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True, num_workers=8, persistent_workers=True)
+    val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=4, persistent_workers=False)
     print('train_loader: ', len(train_loader))
     print('val_loader: ', len(val_loader))
 
