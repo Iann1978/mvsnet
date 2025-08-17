@@ -1,0 +1,4 @@
+type: "DTU"
+view_number: 4
+stage: "train"
+root: "./datasets/dtu"

@@ -1,0 +1,6 @@
+name: "train_unimatch_with_dtu"
+
+defaults:
+  - _self_
+  - model: unimatch
+  - dataset: dtu

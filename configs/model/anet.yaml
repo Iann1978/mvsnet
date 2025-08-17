@@ -1,0 +1,5 @@
+type: "ANet"
+configa: "configa"
+subnet:
+  type: "A1Net"
+  configa1: "configa1"
