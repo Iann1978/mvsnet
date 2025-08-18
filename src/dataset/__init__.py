@@ -1,9 +1,10 @@
 from omegaconf import DictConfig
 from dacite import from_dict
 from .dtu import DTUDatasetConfig, DTUDataset
+from .rnd import RNDDatasetConfig, RNDDataset
 
-config_factory = {'DTU': DTUDatasetConfig}
-dataset_factory = {'DTU': DTUDataset}
+config_factory = {'DTU': DTUDatasetConfig, 'RND': RNDDatasetConfig}
+dataset_factory = {'DTU': DTUDataset, 'RND': RNDDataset}
 def get_dataset(dataset_config: DictConfig, stage: str):
     # print(dataset_config)
     config_type = dataset_config['type']

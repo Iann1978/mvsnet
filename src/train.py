@@ -75,7 +75,7 @@ class TrainConfig:
 
 
 @hydra.main(config_path="../configs",
-            config_name="train_unimatch_with_dtu",
+            config_name="train_unimatch_with_rnd",
             version_base=None)
 def train(cfg: DictConfig):
     print('--------------------------------train--------------------------------')
