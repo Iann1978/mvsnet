@@ -59,15 +59,19 @@ class ModelWapper(LightningModule):
         self.log('val_loss', loss)
 
         if batch_idx == 0:
-            depths_normalized = ((targets[0,0].cpu() - 500) / (1000 - 500)).clamp(0, 1).cpu()
+            groundtruth_normalized = ((targets[0,0].cpu() - 500) / (1000 - 500)).clamp(0, 1).cpu()
+            groundtruth_normalized_colored = self.apply_colormap(groundtruth_normalized)
+
+            preds_colored = self.apply_colormap(preds[0,0].cpu())
             preds_normalized = ((preds[0,0].cpu() - 500) / (1000 - 500)).clamp(0, 1).cpu()
-            preds_colored = self.apply_colormap(preds_normalized)
-            depths_colored = self.apply_colormap(depths_normalized)
+            preds_normalized_colored = self.apply_colormap(preds_normalized)
+            
             self.logger.experiment.add_image('depth/ref_img', imgs[0][0].cpu(), self.global_step, dataformats='CHW')
-            self.logger.experiment.add_image('depth/preds', preds_normalized, self.global_step)
-            self.logger.experiment.add_image('depth/groundtruth', depths_normalized, self.global_step)
+            self.logger.experiment.add_image('depth/groundtruth_normalized', groundtruth_normalized, self.global_step)
+            self.logger.experiment.add_image('depth/groundtruth_normalized_colored', groundtruth_normalized_colored, self.global_step)
             self.logger.experiment.add_image('depth/preds_colored', preds_colored, self.global_step)
-            self.logger.experiment.add_image('depth/groundtruth_colored', depths_colored, self.global_step)
+            self.logger.experiment.add_image('depth/preds_normalized', preds_normalized, self.global_step)
+            self.logger.experiment.add_image('depth/preds_normalized_colored', preds_normalized_colored, self.global_step)
 
         return loss
 
