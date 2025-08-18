@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from ..base_model import BaseModelConfig, BaseModel, BatchedViews
 import torch.nn as nn
 from .backbone import CNNEncoder
-from einops import rearrange
+from einops import rearrange, repeat
 import torch
 from .transformer import FeatureTransformer
+from .matching import correlation_softmax_depth
 
 @dataclass
 class UniMatchConfig(BaseModelConfig):
@@ -38,15 +39,36 @@ class UniMatch(BaseModel):
         # print('x0:', x0.shape)
         # print('x1:', x1.shape)
         
-        nx0,nx1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) # [B, (h w), C]
+        x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) # [B, (h w), C]
         # nx1 = self.transformer(x1, x0, attn_type='none') # [B, (h w), C]
-        # print('after transformer')
-        # print('nx0:', nx0.shape)
-        # print('nx1:', nx1.shape)
+        print('after transformer')
+        print('x0:', x0.shape)
+        print('x1:', x1.shape)
         # x0 = rearrange(nx0, 'b (h w) c -> b c h w', h=H, w=W)
         # x1 = rearrange(nx1, 'b (h w) c -> b c h w', h=H, w=W)
         # print('x0:', x0.shape)
         # print('x1:', x1.shape)
+        # construct depth candidates [B, D, H, W]
+        intrinsics = x['intrinsics'][:,0]
+        extrinsics0 = x['extrinsics'][:,0]
+        extrinsics1 = x['extrinsics'][:,1]
+        pose = torch.inverse(extrinsics0) @ extrinsics1
+        depth_candidates = torch.arange(500, 1000, 10, device=x['images'].device, dtype=x['images'].dtype)
+        depth_candidates = repeat(depth_candidates, 'd -> b d h w', b=B, h=H, w=W)
+        # print('intrinsics:', intrinsics.shape)
+        # print('pose:', pose.shape)
+        # print('depth_candidates:', depth_candidates.shape)
+
+        # print('depth_candidates:', depth_candidates.shape)
+        # exit()
+        depth, match_prob = correlation_softmax_depth(x0, x1, intrinsics, pose, depth_candidates)
+        # print('depth:', depth.shape)
+        # print('match_prob:', match_prob.shape)
+        depth = self.upsample(depth)
+        depth = self.upsample(depth)
+        depth = self.upsample(depth)
+        return depth.unsqueeze(1)
+        exit()
         x = torch.cat([x0, x1], dim=1)
         # print('x:', x.shape)
 
