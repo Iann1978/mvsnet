@@ -41,9 +41,9 @@ class UniMatch(BaseModel):
         
         x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) # [B, (h w), C]
         # nx1 = self.transformer(x1, x0, attn_type='none') # [B, (h w), C]
-        print('after transformer')
-        print('x0:', x0.shape)
-        print('x1:', x1.shape)
+        # print('after transformer')    
+        # print('x0:', x0.shape)
+        # print('x1:', x1.shape)
         # x0 = rearrange(nx0, 'b (h w) c -> b c h w', h=H, w=W)
         # x1 = rearrange(nx1, 'b (h w) c -> b c h w', h=H, w=W)
         # print('x0:', x0.shape)
