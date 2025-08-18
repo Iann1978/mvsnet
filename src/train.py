@@ -14,7 +14,7 @@ from typing import Any
 from hydra.core.hydra_config import HydraConfig
 from pytorch_lightning.loggers import TensorBoardLogger
 import os
-
+import matplotlib.pyplot as plt
 
 
 class ModelWapper(LightningModule):
@@ -58,11 +58,34 @@ class ModelWapper(LightningModule):
         loss = F.l1_loss(preds, targets)
         self.log('val_loss', loss)
 
+        if batch_idx == 0:
+            depths_normalized = ((targets[0,0].cpu() - 500) / (1000 - 500)).clamp(0, 1).cpu()
+            preds_normalized = ((preds[0,0].cpu() - 500) / (1000 - 500)).clamp(0, 1).cpu()
+            preds_colored = self.apply_colormap(preds_normalized)
+            depths_colored = self.apply_colormap(depths_normalized)
+            self.logger.experiment.add_image('depth/ref_img', imgs[0][0].cpu(), self.global_step, dataformats='CHW')
+            self.logger.experiment.add_image('depth/preds', preds_normalized, self.global_step)
+            self.logger.experiment.add_image('depth/groundtruth', depths_normalized, self.global_step)
+            self.logger.experiment.add_image('depth/preds_colored', preds_colored, self.global_step)
+            self.logger.experiment.add_image('depth/groundtruth_colored', depths_colored, self.global_step)
+
         return loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
         return optimizer
+    def apply_colormap(self, depth_tensor):
+        """Apply colormap to depth tensor for better visualization"""
+        # Convert to numpy and normalize
+        depth_np = depth_tensor.squeeze().numpy()
+        depth_normalized = (depth_np - depth_np.min()) / (depth_np.max() - depth_np.min() + 1e-8)
+        
+        # Apply colormap (e.g., 'viridis', 'plasma', 'inferno', 'magma')
+        colored = plt.cm.viridis(depth_normalized)
+        
+        # Convert back to tensor (remove alpha channel)
+        colored_tensor = torch.from_numpy(colored[:, :, :3]).permute(2, 0, 1)
+        return colored_tensor
 
 @dataclass
 class TrainConfig:
@@ -95,7 +118,7 @@ def train(cfg: DictConfig):
     train_dataset = get_dataset(cfg.dataset, 'val')
     val_dataset = get_dataset(cfg.dataset, 'val')
     train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True, num_workers=8, persistent_workers=True)
-    val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=4, persistent_workers=False)
+    val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=1, persistent_workers=False)
     print('train_loader: ', len(train_loader))
     print('val_loader: ', len(val_loader))
 
@@ -107,7 +130,7 @@ def train(cfg: DictConfig):
 
     print('get trainer')
     trainer = Trainer(max_epochs=cfg.epochs,
-                      logger=TensorBoardLogger(tensorboard_dir),
+                      logger=TensorBoardLogger(hydra_run_dir),
                       )
 
     print('start training')
