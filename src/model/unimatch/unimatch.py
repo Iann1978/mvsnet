@@ -26,58 +26,44 @@ class UniMatch(BaseModel):
         print(self.cfg.configu) 
 
     def forward(self, x: BatchedViews):
+        # get x0, x1
+        D = 50
         B, V, C, H, W = x['images'].shape
-        # print(x['images'].shape)
-        x0 = self.backbone(x['images'][:,0])[0] # [B, C, H, W]
-        x1 = self.backbone(x['images'][:,1])[0] # [B, C, H, W]
-        B, C, H, W = x0.shape
-        # print('x0:', x0.shape)
-        # print('x1:', x1.shape)
-        # x0 = rearrange(x0, 'b c h w -> b (h w) c')
-        # x1 = rearrange(x1, 'b c h w -> b (h w) c')
-        # print('before transformer')
-        # print('x0:', x0.shape)
-        # print('x1:', x1.shape)
+        print('B, V, C, H, W:', B, V, C, H, W)
+        x0 = x['images'][:,0]
+        x1 = x['images'][:,1]
+        assert x0.shape == (B, C, H, W), f'x0.shape: {x0.shape}'
+        assert x1.shape == (B, C, H, W), f'x1.shape: {x1.shape}'
         
-        x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) # [B, (h w), C]
-        # nx1 = self.transformer(x1, x0, attn_type='none') # [B, (h w), C]
-        # print('after transformer')    
-        # print('x0:', x0.shape)
-        # print('x1:', x1.shape)
-        # x0 = rearrange(nx0, 'b (h w) c -> b c h w', h=H, w=W)
-        # x1 = rearrange(nx1, 'b (h w) c -> b c h w', h=H, w=W)
-        # print('x0:', x0.shape)
-        # print('x1:', x1.shape)
-        # construct depth candidates [B, D, H, W]
+        # get features of x0, x1 through backbone(cnn)
+        x0 = self.backbone(x0)[0] # [B, C, H, W]
+        x1 = self.backbone(x1)[0] # [B, C, H, W]
+        assert x0.shape == (B, 128, H//8, W//8), f'x0.shape: {x0.shape}'
+        assert x1.shape == (B, 128, H//8, W//8), f'x1.shape: {x1.shape}'
+
+        # enhance features of x0, x1 through transformer
+        x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) 
+        assert x0.shape ==  (B, 128, H//8, W//8), f'x0.shape: {x0.shape}'
+        assert x1.shape ==  (B, 128, H//8, W//8), f'x1.shape: {x1.shape}'
+
+        # depth estimation
         intrinsics = x['intrinsics'][:,0]
         extrinsics0 = x['extrinsics'][:,0]
         extrinsics1 = x['extrinsics'][:,1]
         pose = torch.inverse(extrinsics0) @ extrinsics1
-        depth_candidates = torch.arange(500, 1000, 10, device=x['images'].device, dtype=x['images'].dtype)
-        depth_candidates = repeat(depth_candidates, 'd -> b d h w', b=B, h=H, w=W)
-        # print('intrinsics:', intrinsics.shape)
-        # print('pose:', pose.shape)
-        # print('depth_candidates:', depth_candidates.shape)
+        depth_candidates = torch.linspace(500, 1000, D, device=x['images'].device, dtype=x['images'].dtype)
+        depth_candidates = repeat(depth_candidates, 'd -> b d h w', b=B, h=H//8, w=W//8)
+        assert depth_candidates.shape == (B, D, H//8, W//8), f'depth_candidates.shape: {depth_candidates.shape}'
+        depth, match_prob, warped_feature1 = correlation_softmax_depth(x0, x1, intrinsics, pose, depth_candidates)
+        self.warped_feature1 = warped_feature1
 
-        # print('depth_candidates:', depth_candidates.shape)
-        # exit()
-        depth, match_prob = correlation_softmax_depth(x0, x1, intrinsics, pose, depth_candidates)
-        # print('depth:', depth.shape)
-        # print('match_prob:', match_prob.shape)
+        # upsample depth
         depth = self.upsample(depth)
         depth = self.upsample(depth)
         depth = self.upsample(depth)
-        return depth.unsqueeze(1)
-        exit()
-        x = torch.cat([x0, x1], dim=1)
-        # print('x:', x.shape)
+        depth = depth.unsqueeze(1)
+        assert depth.shape == (B, 1, 1, H, W), f'depth.shape: {depth.shape}'
 
-        x = self.conv1(x)
-        # print('x:', x.shape)
-        x = self.upsample(x)
-        x = self.upsample(x)
-        x = self.upsample(x)
-        # print('x:', x.shape)
-        # exit()
-        return x.unsqueeze(1)
+        return depth
+
 

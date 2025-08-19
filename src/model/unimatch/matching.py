@@ -221,6 +221,7 @@ def correlation_softmax_depth(feature0, feature1,
     warped_feature1 = warp_with_pose_depth_candidates(feature1, intrinsics, pose,
                                                       1. / depth_candidates,
                                                       )  # [B, C, D, H, W]
+    saved_warped_feature1 = warped_feature1.clone().detach().cpu()
 
     correlation = (feature0.unsqueeze(2) * warped_feature1).sum(1) / scale_factor  # [B, D, H, W]
 
@@ -233,7 +234,7 @@ def correlation_softmax_depth(feature0, feature1,
     else:
         depth = (match_prob * depth_candidates).sum(dim=1, keepdim=True)  # [B, 1, H, W]
 
-    return depth, match_prob
+    return depth, match_prob, saved_warped_feature1
 
 
 def warp_with_pose_depth_candidates(feature1, intrinsics, pose, depth,

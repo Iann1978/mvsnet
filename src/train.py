@@ -73,6 +73,12 @@ class ModelWapper(LightningModule):
             self.logger.experiment.add_image('depth/preds_normalized', preds_normalized, self.global_step)
             self.logger.experiment.add_image('depth/preds_normalized_colored', preds_normalized_colored, self.global_step)
 
+            if hasattr(self.model, "warped_feature1"):
+                warped_feature1 = self.model.warped_feature1[0,[0],0]
+                min, max = torch.min(warped_feature1), torch.max(warped_feature1)
+                warped_feature1 = (warped_feature1 - min) / (max - min)
+                warped_feature1_colored = self.apply_colormap(warped_feature1.cpu())
+                self.logger.experiment.add_image('depth/warped_feature1_colored', warped_feature1_colored, self.global_step)
         return loss
 
     def configure_optimizers(self):
