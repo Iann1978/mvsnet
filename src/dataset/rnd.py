@@ -28,7 +28,7 @@ class RNDDataset(BaseDataset):
         intrinsics = torch.randn(V, 3, 3)
         extrinsics = torch.randn(V, 4, 4)
         imgs = torch.randn(V, 3, 256, 256)
-        targets = torch.randn(1, 256, 256)
+        targets = torch.randn(V, 1, 256, 256)
         return UnBatchedViews(
             intrinsics=intrinsics,
             extrinsics=extrinsics,
