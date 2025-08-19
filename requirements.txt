@@ -8,3 +8,4 @@ einops==0.8.0
 dacite==1.8.1
 tensorboard==2.17.0
 numpy==1.26.4
+wandb==0.17.0
