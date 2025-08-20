@@ -6,6 +6,7 @@ from einops import rearrange, repeat
 import torch
 from .transformer import FeatureTransformer
 from .matching import correlation_softmax_depth, warp_with_pose_depth_candidates
+from .attention import SelfAttnPropagation
 
 @dataclass
 class UniMatchConfig(BaseModelConfig):
@@ -21,6 +22,7 @@ class UniMatch(BaseModel):
                  )
         # self.transformer = nn.Transformer(d_model=128, nhead=2, num_encoder_layers=6, num_decoder_layers=6)
         self.transformer = FeatureTransformer(num_layers=6, d_model=128, nhead=1, ffn_dim_expansion=4)
+        self.feature_flow_attn = SelfAttnPropagation(in_channels=128)
         self.conv1 = nn.Conv2d(128*2, 1, kernel_size=3, stride=1, padding=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.conv2 = nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1)
@@ -70,6 +72,9 @@ class UniMatch(BaseModel):
         depth = 1.0/depth
         assert depth.shape == (B, 1, H//8, W//8), f'depth.shape: {depth.shape}'
         assert match_prob.shape == (B, D, H//8, W//8), f'match_prob.shape: {match_prob.shape}'
+
+        depth = self.feature_flow_attn(x0, depth)
+        assert depth.shape == (B, 1, H//8, W//8), f'depth.shape: {depth.shape}'
 
 
 
