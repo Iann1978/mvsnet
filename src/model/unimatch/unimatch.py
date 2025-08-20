@@ -30,7 +30,7 @@ class UniMatch(BaseModel):
         # get x0, x1
         D = 50
         B, V, C, H, W = x['images'].shape
-        print('B, V, C, H, W:', B, V, C, H, W)
+        # print('B, V, C, H, W:', B, V, C, H, W)
         x0 = x['images'][:,0]
         x1 = x['images'][:,1]
         assert x0.shape == (B, C, H, W), f'x0.shape: {x0.shape}'
@@ -38,46 +38,46 @@ class UniMatch(BaseModel):
 
         
         # get features of x0, x1 through backbone(cnn)
-        # x0 = self.backbone(x0)[0] # [B, C, H, W]
-        # x1 = self.backbone(x1)[0] # [B, C, H, W]
-        # assert x0.shape == (B, 128, H//8, W//8), f'x0.shape: {x0.shape}'
-        # assert x1.shape == (B, 128, H//8, W//8), f'x1.shape: {x1.shape}'
+        x0 = self.backbone(x0)[0] # [B, C, H, W]
+        x1 = self.backbone(x1)[0] # [B, C, H, W]
+        assert x0.shape == (B, 128, H//8, W//8), f'x0.shape: {x0.shape}'
+        assert x1.shape == (B, 128, H//8, W//8), f'x1.shape: {x1.shape}'
 
         # # enhance features of x0, x1 through transformer
-        # x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) 
-        # assert x0.shape ==  (B, 128, H//8, W//8), f'x0.shape: {x0.shape}'
-        # assert x1.shape ==  (B, 128, H//8, W//8), f'x1.shape: {x1.shape}'
+        x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) 
+        assert x0.shape ==  (B, 128, H//8, W//8), f'x0.shape: {x0.shape}'
+        assert x1.shape ==  (B, 128, H//8, W//8), f'x1.shape: {x1.shape}'
 
         # get warpping parameters
         intrinsics = x['intrinsics'][:,0]
-        intrinsics[:,0,0] = intrinsics[:,0,0] * 4
-        intrinsics[:,1,1] = intrinsics[:,1,1] * 4
-        intrinsics[:,0,2] = intrinsics[:,0,2] * 4
-        intrinsics[:,1,2] = intrinsics[:,1,2] * 4
+        intrinsics[:,0,0] = intrinsics[:,0,0] / 2.0
+        intrinsics[:,1,1] = intrinsics[:,1,1] / 2.0
+        intrinsics[:,0,2] = intrinsics[:,0,2] / 2.0
+        intrinsics[:,1,2] = intrinsics[:,1,2] / 2.0
         extrinsics0 = x['extrinsics'][:,0]
         extrinsics1 = x['extrinsics'][:,1]
         pose = extrinsics1 @ torch.inverse(extrinsics0)
         depth_candidates = torch.linspace(500, 1000, D, device=x['images'].device, dtype=x['images'].dtype)
-        # depth_candidates = repeat(depth_candidates, 'd -> b d h w', b=B, h=H//8, w=W//8)
-        # assert depth_candidates.shape == (B, D, H//8, W//8), f'depth_candidates.shape: {depth_candidates.shape}'
-        depth_candidates = repeat(depth_candidates, 'd -> b d h w', b=B, h=H, w=W)
-        assert depth_candidates.shape == (B, D, H, W), f'depth_candidates.shape: {depth_candidates.shape}'
+        depth_candidates = repeat(depth_candidates, 'd -> b d h w', b=B, h=H//8, w=W//8)
+        assert depth_candidates.shape == (B, D, H//8, W//8), f'depth_candidates.shape: {depth_candidates.shape}'
 
         # save warped feature1
         self.warped_feature1 = warp_with_pose_depth_candidates(x1, intrinsics, pose, depth_candidates)
-        assert self.warped_feature1.shape == (B, 3, D, H, W), f'self.warped_feature1.shape: {self.warped_feature1.shape}'
+        assert self.warped_feature1.shape == (B, 128, D, H//8, W//8), f'self.warped_feature1.shape: {self.warped_feature1.shape}'
 
         # depth estimation
         depth, match_prob = correlation_softmax_depth(x0, x1, intrinsics, pose, depth_candidates)
+        assert depth.shape == (B, 1, H//8, W//8), f'depth.shape: {depth.shape}'
+        assert match_prob.shape == (B, D, H//8, W//8), f'match_prob.shape: {match_prob.shape}'
 
 
 
 
         # upsample depth
-        # depth = self.upsample(depth)
-        # depth = self.upsample(depth)
-        # depth = self.upsample(depth)
-        depth = self.conv2(depth)
+        depth = self.upsample(depth)
+        depth = self.upsample(depth)
+        depth = self.upsample(depth)
+        # depth = self.conv2(depth)
         depth = depth.unsqueeze(1)
         assert depth.shape == (B, 1, 1, H, W), f'depth.shape: {depth.shape}'
 

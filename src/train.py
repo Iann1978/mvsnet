@@ -75,7 +75,7 @@ class ModelWapper(LightningModule):
             self.logger.experiment.add_image('depth/preds_normalized_colored', preds_normalized_colored, self.global_step)
 
             if hasattr(self.model, "warped_feature1"):
-                warped_feature1 = self.model.warped_feature1[0,:,0]
+                warped_feature1 = self.model.warped_feature1[0,:3,0]
                 self.logger.experiment.add_image('depth/warped_feature1', warped_feature1, self.global_step)
                 warped_feature1 = self.model.warped_feature1[0,[0],0]
                 min, max = torch.min(warped_feature1), torch.max(warped_feature1)
