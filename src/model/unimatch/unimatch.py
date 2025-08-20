@@ -11,19 +11,20 @@ from .attention import SelfAttnPropagation
 @dataclass
 class UniMatchConfig(BaseModelConfig):
     configu: str
+    feature_number: int = 128
 
 class UniMatch(BaseModel):
     def __init__(self, cfg: UniMatchConfig):
         super().__init__(cfg)
-        self.backbone = CNNEncoder(output_dim=128,
+        self.backbone = CNNEncoder(output_dim=cfg.feature_number,
                  norm_layer=nn.InstanceNorm2d,
                  num_output_scales=1,
                  return_all_scales=False,
                  )
         # self.transformer = nn.Transformer(d_model=128, nhead=2, num_encoder_layers=6, num_decoder_layers=6)
-        self.transformer = FeatureTransformer(num_layers=6, d_model=128, nhead=1, ffn_dim_expansion=4)
-        self.feature_flow_attn = SelfAttnPropagation(in_channels=128)
-        self.conv1 = nn.Conv2d(128*2, 1, kernel_size=3, stride=1, padding=1)
+        self.transformer = FeatureTransformer(num_layers=6, d_model=cfg.feature_number, nhead=1, ffn_dim_expansion=4)
+        self.feature_flow_attn = SelfAttnPropagation(in_channels=cfg.feature_number)
+        self.conv1 = nn.Conv2d(cfg.feature_number*2, 1, kernel_size=3, stride=1, padding=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.conv2 = nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1)
         print(self.cfg.configu) 
@@ -42,13 +43,13 @@ class UniMatch(BaseModel):
         # get features of x0, x1 through backbone(cnn)
         x0 = self.backbone(x0)[0] # [B, C, H, W]
         x1 = self.backbone(x1)[0] # [B, C, H, W]
-        assert x0.shape == (B, 128, H//8, W//8), f'x0.shape: {x0.shape}'
-        assert x1.shape == (B, 128, H//8, W//8), f'x1.shape: {x1.shape}'
+        assert x0.shape == (B, self.cfg.feature_number, H//8, W//8), f'x0.shape: {x0.shape}'
+        assert x1.shape == (B, self.cfg.feature_number, H//8, W//8), f'x1.shape: {x1.shape}'
 
         # # enhance features of x0, x1 through transformer
         x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) 
-        assert x0.shape ==  (B, 128, H//8, W//8), f'x0.shape: {x0.shape}'
-        assert x1.shape ==  (B, 128, H//8, W//8), f'x1.shape: {x1.shape}'
+        assert x0.shape ==  (B, self.cfg.feature_number, H//8, W//8), f'x0.shape: {x0.shape}'
+        assert x1.shape ==  (B, self.cfg.feature_number, H//8, W//8), f'x1.shape: {x1.shape}'
 
         # get warpping parameters
         intrinsics = x['intrinsics'][:,0]
