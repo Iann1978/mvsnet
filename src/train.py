@@ -139,7 +139,7 @@ def train(cfg: DictConfig):
     train_dataset = get_dataset(cfg.dataset, 'val')
     val_dataset = get_dataset(cfg.dataset, 'val')
     train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True, num_workers=8, persistent_workers=True)
-    val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=1, persistent_workers=False)
+    val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=4, persistent_workers=False)
     print('train_loader: ', len(train_loader))
     print('val_loader: ', len(val_loader))
 
