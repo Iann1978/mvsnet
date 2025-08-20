@@ -12,3 +12,4 @@ class UnBatchedViews(TypedDict, total=False):
     extrinsics: Float[Tensor, "V 4 4"]
     imgs: Float[Tensor, "V 3 H W"]
     targets: Float[Tensor, "V 1 H W"]
+    masks: Float[Tensor, "V 1 H W"]

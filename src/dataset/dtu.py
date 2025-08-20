@@ -134,13 +134,14 @@ class DTUDataset(BaseDataset):
         # 4x upsample depth and mask
         import torch.nn.functional as F
         depth = F.interpolate(depth.unsqueeze(0).unsqueeze(0), scale_factor=4, mode='bilinear', align_corners=False)
-        mask = F.interpolate(mask.unsqueeze(0).unsqueeze(0), scale_factor=4, mode='nearest').squeeze(0).squeeze(0)
+        mask = F.interpolate(mask.unsqueeze(0).unsqueeze(0), scale_factor=4, mode='nearest')
 
         return UnBatchedViews(
             intrinsics=intrinsics,
             extrinsics=extrinsics,
             imgs=imgs,
-            targets=depth
+            targets=depth,
+            masks=mask
         )
 
 

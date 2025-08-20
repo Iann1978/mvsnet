@@ -47,6 +47,7 @@ class ModelWapper(LightningModule):
         extrinsics = batch['extrinsics']
         imgs = batch['imgs']
         targets = batch['targets']
+        masks = batch['masks']
 
    
         batched_views = BatchedViews(
@@ -62,6 +63,7 @@ class ModelWapper(LightningModule):
             groundtruth_normalized = ((targets[0,0].cpu() - 500) / (1000 - 500)).clamp(0, 1).cpu()
             groundtruth_normalized_colored = self.apply_colormap(groundtruth_normalized)
 
+
             preds_colored = self.apply_colormap(preds[0,0].cpu())
             preds_normalized = ((preds[0,0].cpu() - 500) / (1000 - 500)).clamp(0, 1).cpu()
             preds_normalized_colored = self.apply_colormap(preds_normalized)
@@ -73,6 +75,7 @@ class ModelWapper(LightningModule):
             self.logger.experiment.add_image('depth/preds_colored', preds_colored, self.global_step)
             self.logger.experiment.add_image('depth/preds_normalized', preds_normalized, self.global_step)
             self.logger.experiment.add_image('depth/preds_normalized_colored', preds_normalized_colored, self.global_step)
+            self.logger.experiment.add_image('depth/mask', masks[0,0].cpu(), self.global_step, dataformats='CHW')
 
             if hasattr(self.model, "warped_feature1"):
                 warped_feature1 = self.model.warped_feature1[0,:3,0]
