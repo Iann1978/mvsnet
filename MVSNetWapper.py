@@ -407,23 +407,24 @@ def test_homography_warp():
 
     from MVSNetDatasetDTU import MVSNetDatasetDTU, MVSNetDatasetDTUConfig
     root = './datasets/dtu'
-    cfg = MVSNetDatasetDTUConfig(stage='val', root=root)
+    cfg = MVSNetDatasetDTUConfig(stage='val', root=root, src_view_number=4)
     dataset = MVSNetDatasetDTU(cfg)
     print(len(dataset))
-    intrinsics, extrinsics, imgs, depth = dataset[0]
+    intrinsics, extrinsics, imgs, depth, mask = dataset[0]
     intrinsics = intrinsics.unsqueeze(0).cuda()
     extrinsics = extrinsics.unsqueeze(0).cuda()
     imgs = imgs.unsqueeze(0).cuda()
 
-    cost_volume = CostVolume()
-    volume0 = cost_volume.homography_warp1(0, intrinsics, extrinsics, imgs, torch.tensor([500]).cuda())
-    volume1 = cost_volume.homography_warp1(1, intrinsics, extrinsics, imgs, torch.tensor([500]).cuda())
-    volume2 = cost_volume.homography_warp1(2, intrinsics, extrinsics, imgs, torch.tensor([500]).cuda())
+    cost_volume = HomographyWarping()
+    volume0 = cost_volume.homography_warp1(1, intrinsics, extrinsics, imgs, torch.tensor([500]).cuda())
+    volume1 = cost_volume.homography_warp1(1, intrinsics, extrinsics, imgs, torch.tensor([666]).cuda())
+    volume2 = cost_volume.homography_warp1(1, intrinsics, extrinsics, imgs, torch.tensor([832]).cuda())
+    volume3 = cost_volume.homography_warp1(1, intrinsics, extrinsics, imgs, torch.tensor([1001]).cuda())
 
-    imgs_4 = imgs.squeeze(0)
-    imgs_4 = torch.nn.functional.interpolate(imgs_4, size=(128, 160), mode='bilinear', align_corners=True)
-    imgs_4 = imgs_4.unsqueeze(0).cuda()
-    volume3 = cost_volume.homography_warp1(3, intrinsics, extrinsics, imgs_4, torch.tensor([500]).cuda())
+    # imgs_4 = imgs.squeeze(0)
+    # imgs_4 = torch.nn.functional.interpolate(imgs_4, size=(128, 160), mode='bilinear', align_corners=True)
+    # imgs_4 = imgs_4.unsqueeze(0).cuda()
+    # volume3 = cost_volume.homography_warp1(3, intrinsics, extrinsics, imgs_4, torch.tensor([500]).cuda())
 
     print(volume1.shape)
 

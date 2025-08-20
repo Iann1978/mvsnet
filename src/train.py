@@ -67,6 +67,7 @@ class ModelWapper(LightningModule):
             preds_normalized_colored = self.apply_colormap(preds_normalized)
             
             self.logger.experiment.add_image('depth/ref_img', imgs[0][0].cpu(), self.global_step, dataformats='CHW')
+            self.logger.experiment.add_image('depth/src_img', imgs[0][1].cpu(), self.global_step, dataformats='CHW')
             self.logger.experiment.add_image('depth/groundtruth_normalized', groundtruth_normalized, self.global_step)
             self.logger.experiment.add_image('depth/groundtruth_normalized_colored', groundtruth_normalized_colored, self.global_step)
             self.logger.experiment.add_image('depth/preds_colored', preds_colored, self.global_step)
@@ -74,6 +75,8 @@ class ModelWapper(LightningModule):
             self.logger.experiment.add_image('depth/preds_normalized_colored', preds_normalized_colored, self.global_step)
 
             if hasattr(self.model, "warped_feature1"):
+                warped_feature1 = self.model.warped_feature1[0,:,0]
+                self.logger.experiment.add_image('depth/warped_feature1', warped_feature1, self.global_step)
                 warped_feature1 = self.model.warped_feature1[0,[0],0]
                 min, max = torch.min(warped_feature1), torch.max(warped_feature1)
                 warped_feature1 = (warped_feature1 - min) / (max - min)
