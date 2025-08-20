@@ -30,6 +30,7 @@ class ModelWapper(LightningModule):
         extrinsics = batch['extrinsics']
         imgs = batch['imgs']
         targets = batch['targets']
+        masks = batch['masks']
 
         batched_views = BatchedViews(
             intrinsics=intrinsics,
@@ -37,6 +38,8 @@ class ModelWapper(LightningModule):
             images=imgs
         )
         preds = self(batched_views)
+        preds = preds * masks
+        targets = targets * masks
         loss = F.l1_loss(preds, targets)
         self.log('train_loss', loss)
         return loss
@@ -56,6 +59,8 @@ class ModelWapper(LightningModule):
             images=imgs
         )
         preds = self(batched_views)
+        preds = preds * masks
+        targets = targets * masks
         loss = F.l1_loss(preds, targets)
         self.log('val_loss', loss)
 
