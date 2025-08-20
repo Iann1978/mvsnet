@@ -66,7 +66,8 @@ class UniMatch(BaseModel):
         assert self.warped_feature1.shape == (B, 128, D, H//8, W//8), f'self.warped_feature1.shape: {self.warped_feature1.shape}'
 
         # depth estimation
-        depth, match_prob = correlation_softmax_depth(x0, x1, intrinsics, pose, depth_candidates)
+        depth, match_prob = correlation_softmax_depth(x0, x1, intrinsics, pose, 1.0/depth_candidates)
+        depth = 1.0/depth
         assert depth.shape == (B, 1, H//8, W//8), f'depth.shape: {depth.shape}'
         assert match_prob.shape == (B, D, H//8, W//8), f'match_prob.shape: {match_prob.shape}'
 
