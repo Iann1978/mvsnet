@@ -12,6 +12,7 @@ from .attention import SelfAttnPropagation
 class UniMatchConfig(BaseModelConfig):
     configu: str
     feature_number: int = 128
+    depth_candidates: int = 192
 
 class UniMatch(BaseModel):
     def __init__(self, cfg: UniMatchConfig):
@@ -31,7 +32,7 @@ class UniMatch(BaseModel):
 
     def forward(self, x: BatchedViews):
         # get x0, x1
-        D = 50
+        D = self.cfg.depth_candidates
         B, V, C, H, W = x['images'].shape
         # print('B, V, C, H, W:', B, V, C, H, W)
         x0 = x['images'][:,0]
