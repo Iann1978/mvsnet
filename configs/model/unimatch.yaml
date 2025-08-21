@@ -2,3 +2,5 @@ type: "UniMatch"
 configu: "configu"
 feature_number: 128
 depth_candidates: 192
+depth_min: 425
+depth_max: 910

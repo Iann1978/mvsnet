@@ -13,6 +13,8 @@ class UniMatchConfig(BaseModelConfig):
     configu: str
     feature_number: int = 128
     depth_candidates: int = 192
+    depth_min: int = 425
+    depth_max: int = 910
 
 class UniMatch(BaseModel):
     def __init__(self, cfg: UniMatchConfig):
@@ -61,7 +63,7 @@ class UniMatch(BaseModel):
         extrinsics0 = x['extrinsics'][:,0]
         extrinsics1 = x['extrinsics'][:,1]
         pose = extrinsics1 @ torch.inverse(extrinsics0)
-        depth_candidates = torch.linspace(500, 1000, D, device=x['images'].device, dtype=x['images'].dtype)
+        depth_candidates = torch.linspace(self.cfg.depth_min, self.cfg.depth_max, D, device=x['images'].device, dtype=x['images'].dtype)
         depth_candidates = repeat(depth_candidates, 'd -> b d h w', b=B, h=H//8, w=W//8)
         assert depth_candidates.shape == (B, D, H//8, W//8), f'depth_candidates.shape: {depth_candidates.shape}'
 
