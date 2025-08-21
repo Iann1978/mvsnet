@@ -7,6 +7,7 @@ import torch
 from .transformer import FeatureTransformer
 from .matching import correlation_softmax_depth, warp_with_pose_depth_candidates
 from .attention import SelfAttnPropagation
+from .utils import feature_add_position
 
 @dataclass
 class UniMatchConfig(BaseModelConfig):
@@ -50,6 +51,7 @@ class UniMatch(BaseModel):
         assert x1.shape == (B, self.cfg.feature_number, H//8, W//8), f'x1.shape: {x1.shape}'
 
         # # enhance features of x0, x1 through transformer
+        x0,x1 = feature_add_position(x0, x1, attn_splits=2, feature_channels=self.cfg.feature_number)
         x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) 
         assert x0.shape ==  (B, self.cfg.feature_number, H//8, W//8), f'x0.shape: {x0.shape}'
         assert x1.shape ==  (B, self.cfg.feature_number, H//8, W//8), f'x1.shape: {x1.shape}'
