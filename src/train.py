@@ -77,7 +77,6 @@ class ModelWapper(LightningModule):
             self.logger.experiment.add_image('depth/src_img', imgs[0][1].cpu(), self.global_step, dataformats='CHW')
             self.logger.experiment.add_image('depth/groundtruth_normalized', groundtruth_normalized, self.global_step)
             self.logger.experiment.add_image('depth/groundtruth_normalized_colored', groundtruth_normalized_colored, self.global_step)
-            self.logger.experiment.add_image('depth/preds_colored', preds_colored, self.global_step)
             self.logger.experiment.add_image('depth/preds_normalized', preds_normalized, self.global_step)
             self.logger.experiment.add_image('depth/preds_normalized_colored', preds_normalized_colored, self.global_step)
             self.logger.experiment.add_image('depth/mask', masks[0,0].cpu(), self.global_step, dataformats='CHW')
