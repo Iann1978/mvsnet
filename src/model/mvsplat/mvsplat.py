@@ -73,7 +73,7 @@ class MVSPlat(BaseModel):
         D = self.cfg.depth_candidates
         B, V, C, H, W = x['images'].shape
         F = self.cfg.feature_number
-        print('B, V, C, F, H, W:', B, V, C, F, H, W)
+        # print('B, V, C, F, H, W:', B, V, C, F, H, W)
         x0 = x['images'][:,0]
         x1 = x['images'][:,1]
         assert x0.shape == (B, C, H, W), f'x0.shape: {x0.shape}'
