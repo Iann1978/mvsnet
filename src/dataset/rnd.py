@@ -21,7 +21,7 @@ class RNDDataset(BaseDataset):
         self.stage = stage
 
     def __len__(self):
-        return 128
+        return 256
 
     def __getitem__(self, idx):
         V = self.cfg.view_number
