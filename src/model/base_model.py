@@ -19,6 +19,6 @@ class BaseModel(nn.Module, ABC):
         self.cfg = cfg
 
     @abstractmethod
-    def forward(self, x: BatchedViews):
+    def forward(self, x: BatchedViews) -> Float[Tensor, "batch _ 1 _ _"]:
         pass
 
