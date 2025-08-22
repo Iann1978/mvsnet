@@ -6,6 +6,9 @@ from jaxtyping import Float, Int64
 from torch import Tensor
 import torch
 from .ldm_unet.unet import UNetModel
+from ..unimatch.transformer import FeatureTransformer
+from ..unimatch.matching import warp_with_pose_depth_candidates, correlation_softmax_depth
+from einops import repeat
 
 @dataclass
 class MVSPlatConfig(BaseModelConfig):
@@ -24,16 +27,20 @@ class MVSPlat(BaseModel):
                  num_output_scales=1,
                  return_all_scales=False,
                  )
+        self.transformer = FeatureTransformer(num_layers=6,
+                                              d_model=cfg.feature_number,
+                                              nhead=1,
+                                              ffn_dim_expansion=4)
         self.upsample8x = nn.Upsample(scale_factor=8, mode='bilinear', align_corners=True)
         self.upsample4x = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
         self.upsample2x = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
 
-        input_channels = cfg.feature_number*2
+        input_channels = cfg.feature_number*2+1+cfg.depth_candidates
         channels = cfg.feature_number
         num_views = 2
         num_depth_candidates = cfg.depth_candidates
-        costvolume_unet_attn_res = [1, 2, 4, 8]
-        costvolume_unet_channel_mult = [1, 2, 4, 8]
+        costvolume_unet_attn_res = ()
+        costvolume_unet_channel_mult = (1,1,1)
 
         modules = [
             nn.Conv2d(input_channels, channels, 3, 1, 1),
@@ -78,13 +85,45 @@ class MVSPlat(BaseModel):
         assert x0.shape == (B, F, H//8, W//8), f'x0.shape: {x0.shape}'
         assert x1.shape == (B, F, H//8, W//8), f'x1.shape: {x1.shape}'
 
+        # # enhance features of x0, x1 through transformer
+        x0,x1 = self.transformer(x0, x1, attn_type='swin', attn_num_splits=2) 
+        assert x0.shape ==  (B, F, H//8, W//8), f'x0.shape: {x0.shape}'
+        assert x1.shape ==  (B, F, H//8, W//8), f'x1.shape: {x1.shape}'
+
+                # get warpping parameters
+        intrinsics = x['intrinsics'][:,0]
+        intrinsics[:,0,0] = intrinsics[:,0,0] / 2.0
+        intrinsics[:,1,1] = intrinsics[:,1,1] / 2.0
+        intrinsics[:,0,2] = intrinsics[:,0,2] / 2.0
+        intrinsics[:,1,2] = intrinsics[:,1,2] / 2.0
+        extrinsics0 = x['extrinsics'][:,0]
+        extrinsics1 = x['extrinsics'][:,1]
+        pose = extrinsics1 @ torch.inverse(extrinsics0)
+        depth_candidates = torch.linspace(self.cfg.depth_min, self.cfg.depth_max, D, device=x['images'].device, dtype=x['images'].dtype)
+        depth_candidates = repeat(depth_candidates, 'd -> b d h w', b=B, h=H//8, w=W//8)
+        assert depth_candidates.shape == (B, D, H//8, W//8), f'depth_candidates.shape: {depth_candidates.shape}'
+
+        # save warped feature1
+        self.warped_feature1 = warp_with_pose_depth_candidates(x1, intrinsics, pose, depth_candidates)
+        assert self.warped_feature1.shape == (B, 128, D, H//8, W//8), f'self.warped_feature1.shape: {self.warped_feature1.shape}'
+
+        # depth estimation
+        depth, match_prob = correlation_softmax_depth(x0, x1, intrinsics, pose, 1.0/depth_candidates)
+        depth = 1.0/depth
+        assert depth.shape == (B, 1, H//8, W//8), f'depth.shape: {depth.shape}'
+        assert match_prob.shape == (B, D, H//8, W//8), f'match_prob.shape: {match_prob.shape}'
+
         x0 = self.upsample2x(x0)
         x1 = self.upsample2x(x1)
+        depth = self.upsample2x(depth)
+        match_prob = self.upsample2x(match_prob)
         assert x0.shape == (B, F, H//4, W//4), f'x0.shape: {x0.shape}'
         assert x1.shape == (B, F, H//4, W//4), f'x1.shape: {x1.shape}'
+        assert depth.shape == (B, 1, H//4, W//4), f'depth.shape: {depth.shape}'
+        assert match_prob.shape == (B, D, H//4, W//4), f'match_prob.shape: {match_prob.shape}'
 
-        x = torch.cat([x0, x1], dim=1)  
-        assert x.shape == (B, F*2, H//4, W//4), f'x.shape: {x.shape}'
+        x = torch.cat([x0, x1, depth, match_prob], dim=1)  
+        assert x.shape == (B, F+F+1+D, H//4, W//4), f'x.shape: {x.shape}'
 
         x = self.corr_refine_net(x) # [B, D, H//4, W//4]
         assert x.shape == (B, D, H//4, W//4), f'x.shape: {x.shape}'

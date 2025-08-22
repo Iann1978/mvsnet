@@ -1,0 +1,11 @@
+name: "train_mvsplat_with_rnd"
+
+defaults:
+  - _self_
+  - hydra: hydra
+  - model: mvsplat
+  - dataset: dtu
+
+epochs: 10
+batch_size: 4
+float32_matmul_precision: "medium"
